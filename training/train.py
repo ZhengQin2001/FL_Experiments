@@ -7,21 +7,20 @@ from models.cnn import CNN
 from utils.data_utils import load_client_data, load_test_data
 from utils.train_utils import train_client, evaluate_model
 from algorithms.fedavg import fedavg_aggregation
-
+from algorithms.afl import afl_aggregation
 
 def compute_fairness(client_losses, global_loss, client_weights):
     fairness = sum([weight * (client_loss - global_loss) ** 2 for client_loss, weight in zip(client_losses, client_weights)])
     return fairness
 
-
-def fedavg_training(args):
+def federated_training(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Initialize the global model
     global_model = CNN(args.data).to(device)
     criterion = torch.nn.CrossEntropyLoss()
 
-    client_weights = [1.0 / args.num_clients] * args.num_clients  # Assuming equal weights for simplicity
+    client_weights = [1.0 / args.num_clients] * args.num_clients  # Assuming equal weights initially
 
     # Track accuracies and fairness metrics across runs
     test_accuracies = []
@@ -70,7 +69,13 @@ def fedavg_training(args):
 
                 client_models.append(client_model)
 
-            global_model = fedavg_aggregation(global_model, client_models)
+            # Select aggregation method based on args.federated_type
+            if args.federated_type == 'fedavg':
+                global_model = fedavg_aggregation(global_model, client_models)
+            elif args.federated_type == 'afl':
+                global_model, client_weights = afl_aggregation(global_model, client_models, client_losses, client_weights)
+            else:
+                raise ValueError(f"Unsupported federated type: {args.federated_type}")
 
             # Calculate client fairness (worst-off client loss)
             client_fairness = max(client_losses)

@@ -4,12 +4,12 @@ import os
 from torch.utils.data.dataset import Subset
 from torchvision.datasets.mnist import MNIST
 from utils.data_preparation import prepare_data
-from training import fedavg_training
+from training.train import federated_training
 
 
 def main(args):
     prepare_data(args)
-    fedavg_training(args)
+    federated_training(args)
 
 if __name__ == "__main__":
     args = get_args()

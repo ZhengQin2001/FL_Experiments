@@ -31,12 +31,12 @@ def get_args():
     parser.add_argument('--federated_type', default='fedavg', type=str,
                         choices=['fedavg', 'afl', 'dpmcf'],
                         help="Types of federated learning algorithm and/or training procedure.")
-    
+
     # training.
     parser.add_argument('-lr', default=0.001, type=float,
                         help='Learning rate')
     
-    parser.add_argument('-r', '--rounds', default=10, type=int,
+    parser.add_argument('-r', '--rounds', default=5, type=int,
                         help='Number of rounds')
 
     parser.add_argument('-b', '--batch_size', default=16, type=int,
