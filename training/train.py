@@ -8,6 +8,7 @@ from utils.data_utils import load_client_data, load_test_data
 from utils.train_utils import train_client, evaluate_model
 from algorithms.fedavg import fedavg_aggregation
 from algorithms.afl import afl_aggregation
+from algorithms.dpmcf import DPMCF
 
 def compute_fairness(client_losses, global_loss, client_weights):
     fairness = sum([weight * (client_loss - global_loss) ** 2 for client_loss, weight in zip(client_losses, client_weights)])
@@ -74,9 +75,14 @@ def federated_training(args):
                 global_model = fedavg_aggregation(global_model, client_models)
             elif args.federated_type == 'afl':
                 global_model, client_weights = afl_aggregation(global_model, client_models, client_losses, client_weights)
+            elif args.federated_type == 'dpmcf':
+                dp_mcf = DPMCF(args, global_model)
+                global_model = dp_mcf.aggregation(client_models, client_losses)
+                client_weights = dp_mcf.client_weights
             else:
                 raise ValueError(f"Unsupported federated type: {args.federated_type}")
 
+            print('Client weights: ', client_weights)
             # Calculate client fairness (worst-off client loss)
             client_fairness = max(client_losses)
             client_fairness_values.append(client_fairness)
@@ -84,7 +90,7 @@ def federated_training(args):
             # Calculate global test accuracy
             test_loader = load_test_data(args)
             global_accuracy = evaluate_model(global_model, test_loader, device)
-            print(f"Round {round+1} completed. Global Model Test Accuracy: {global_accuracy:.4f}. Client Model Accuracy: {client_accuracies:2f}")
+            print(f"Round {round+1} completed. Global Model Test Accuracy: {global_accuracy:.4f}. Client Model Accuracy: {client_accuracies}")
 
         # Store the global test accuracy for this run
         test_accuracies.append(global_accuracy)

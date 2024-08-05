@@ -48,6 +48,19 @@ def get_args():
     parser.add_argument('--num_runs', default=2, type=int,
                         help='Number of runs')
 
+    # Differential Privacy Minimax Client Fairness (DP-MCF) specific arguments
+    parser.add_argument('--epsilon', default=1.0, type=float,
+                        help='Privacy budget (epsilon) for DP-MCF')
+    
+    parser.add_argument('--delta', default=1e-5, type=float,
+                        help='Privacy parameter (delta) for DP-MCF')
+    
+    parser.add_argument('--sensitivity', default=1.0, type=float,
+                        help='Sensitivity bound (C) for DP-MCF')
+    
+    parser.add_argument('--lr_mu', default=0.001, type=float,
+                        help='Learning rate for updating client weights (mu) in DP-MCF')
+    
     args = parser.parse_args()
 
     # Set num_clients based on the dataset

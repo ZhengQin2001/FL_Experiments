@@ -30,6 +30,8 @@ class CNN(nn.Module):
             return 3
         elif self.dataset in ['mnist','fashion_mnist','emnist', 'emnist_full']:
             return 1
+        else:
+            raise ValueError(f"Unsupported dataset: {self.dataset}")
 
     def _decide_output_representation_size(self):
         if 'mnist' in self.dataset:
