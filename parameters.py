@@ -36,16 +36,16 @@ def get_args():
     parser.add_argument('-lr', default=0.001, type=float,
                         help='Learning rate')
     
-    parser.add_argument('-r', '--rounds', default=5, type=int,
+    parser.add_argument('-r', '--rounds', default=10, type=int,
                         help='Number of rounds')
 
-    parser.add_argument('-b', '--batch_size', default=16, type=int,
+    parser.add_argument('-b', '--batch_size', default=32, type=int,
                         help='Batch size for client training')
     
     parser.add_argument('--model_dir', default='./model/',
                         help='path to model')
     
-    parser.add_argument('--num_runs', default=2, type=int,
+    parser.add_argument('--num_runs', default=1, type=int,
                         help='Number of runs')
 
     # Differential Privacy Minimax Client Fairness (DP-MCF) specific arguments
