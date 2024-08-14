@@ -10,7 +10,10 @@ from training.dpmcf_training import dpmcf_training
 
 def main(args):
     prepare_data(args)
-    dpmcf_training(args)
+    if args.federated_type in ['fedavg', 'afl']:
+        federated_training(args)
+    elif args.federated_type in ['dpmcf']:
+        dpmcf_training(args)
 
 if __name__ == "__main__":
     args = get_args()

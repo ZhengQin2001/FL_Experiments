@@ -5,19 +5,13 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, Subset, random_split
 from models.cnn import CNN
 from utils.data_utils import load_client_data, load_test_data
-from utils.train_utils import train_client, evaluate_model
+from utils.train_utils import train_client, evaluate_model, evaluate_model_loss
 from algorithms.dpmcf import DPMCF
 import os
+from copy import deepcopy
 
 def dpmcf_training(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    # Initialize the global model
-    global_model = CNN(args.data).to(device)
-    criterion = torch.nn.CrossEntropyLoss()
-
-    # Initialize DPMCF algorithm with the global model
-    dp_mcf = DPMCF(args, global_model)
 
     # Track accuracies and fairness metrics across runs
     test_accuracies = []
@@ -28,62 +22,69 @@ def dpmcf_training(args):
         torch.manual_seed(run)
         np.random.seed(run)
 
+        # Initialize the global model
+        global_model = CNN(args.data).to(device)
+        criterion = torch.nn.CrossEntropyLoss()
+
         # Reset the global model for each run
         global_model.apply(lambda m: m.reset_parameters() if hasattr(m, 'reset_parameters') else None)
 
+        # Initialize DPMCF algorithm with the global model
+        dp_mcf = DPMCF(args, global_model, criterion)
+        
+        # Initialize the client model dictionary outside the loop
+        client_models = {i: deepcopy(global_model) for i in range(args.num_clients)}
+        client_losses = {}
+
+        # Preload data for all clients
         for i_t in range(args.num_clients):
-            # Step 1: Load the client's data
+            # Load the client's data
             train_loader, val_loader = load_client_data(args, i_t)
 
-            # Step 2: Further split the training data into positive and negative subsets
-            train_data = train_loader.dataset
-            total_size = len(train_data)
-            split_size = total_size // 2
-
-            # Randomly split the dataset into two equal parts
-            positive_subset, negative_subset = random_split(train_data, [split_size, total_size - split_size])
-
-            # Create DataLoaders for the split subsets
-            positive_loader = DataLoader(positive_subset, batch_size=args.batch_size, shuffle=True)
-            negative_loader = DataLoader(negative_subset, batch_size=args.batch_size, shuffle=True)
-
             # Store loaders for each client
-            dp_mcf.client_data[i_t] = (positive_loader, negative_loader)
-
+            dp_mcf.client_data[i_t] = (val_loader, train_loader) # (positive set, negative set)
+        
         for t in tqdm(range(args.rounds), desc="Rounds"):
-            client_losses = []
-
             # Step 3: Sample a client based on current weights
-            i_t = np.random.choice(args.num_clients, p=dp_mcf.client_weights)
+            client_indices = np.arange(args.num_clients)
 
+            i_t = np.random.choice(client_indices, p=dp_mcf.client_weights)
+            
             # Step 4: Load the split loaders for the sampled client
             positive_loader, negative_loader = dp_mcf.client_data[i_t]
 
-            # Sample mini-batches from the positive and negative datasets
-            negative_batch = next(iter(negative_loader))
-            positive_batch = next(iter(positive_loader))
+            # Use the constant mini-batch size from args for gradient updates
+            mini_batch_indices = np.random.choice(len(negative_loader.dataset), args.minibatch_size, replace=True)
+            mini_batch_subset = Subset(negative_loader.dataset, mini_batch_indices)
+            mini_batch_loader = DataLoader(mini_batch_subset, batch_size=args.batch_size, shuffle=False)
 
-            # Train the client model
-            client_model = CNN(args.data).to(device)
-            client_model.load_state_dict(global_model.state_dict())
+            # Train the client model using the CNN training batch
+            client_model = client_models[i_t]
 
-            optimizer = optim.SGD(client_model.parameters(), lr=args.lr)
+            # Perform the client update with differential privacy, returning the updated model and loss
+            updated_model = dp_mcf.client_update(client_model, mini_batch_loader)
+            client_models[i_t] = updated_model
 
-            # We use the negative batch for training (as indicated by the algorithm)
-            training_loss = train_client(client_model, negative_loader, optimizer, criterion, device, return_loss=True)
-            client_losses.append(training_loss)
+            # Evaluate the client's model on its positive subset
+            positive_loss, accuracy = evaluate_model_loss(updated_model, positive_loader, device, criterion)
+            client_losses[i_t] = positive_loss
+            
 
-            accuracy = evaluate_model(client_model, positive_loader, device)
-            print(f"Client {i_t} Validation Accuracy: {accuracy:.2f}")
+            # Step 5: Update global model and client weights using DPMCF with the aggregated mini-batch
+            dp_mcf.dpmcf(i_t, client_models, client_losses)
 
-            # Step 5: Update global model and client weights using DPMCF
-            dp_mcf.dpmcf(client_model, training_loss, len(negative_batch))
+            if t%100 == 0:
+                print(f"Client {i_t} Accuracy on positive loader: {accuracy:.2f}, {positive_loss:.4f}")
+                print(f'Client weights: {dp_mcf.client_weights}')
+                dp_mcf.gradient_update(client_models)
 
-            # Evaluate global model on test data
-            test_loader = load_test_data(args)
-            global_accuracy = evaluate_model(global_model, test_loader, device)
-            test_accuracies.append(global_accuracy)
-            print(f"Round {t+1} completed. Global Model Test Accuracy: {global_accuracy:.4f}")
+                # Evaluate global model on test data
+                test_loader = load_test_data(args)
+                global_accuracy = evaluate_model(dp_mcf.global_model, test_loader, device)
+                test_accuracies.append(global_accuracy)
+                print(f"Round {t+1} completed. Global Model Test Accuracy: {global_accuracy:.4f}")
+                # print(f'Client losses: ', client_losses)
+
 
         # Save the global model after all rounds
         model_base_dir = os.path.join(args.model_dir, args.data, args.data_setting)

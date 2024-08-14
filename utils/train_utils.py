@@ -33,3 +33,24 @@ def evaluate_model(model, val_loader, device):
             correct += (predicted == target).sum().item()
     accuracy = correct / total
     return accuracy
+
+def evaluate_model_loss(model, val_loader, device, criterion):
+    model.eval()
+    total_loss = 0.0
+    total_samples = 0
+    correct = 0
+    total = 0
+
+    with torch.no_grad():
+        for data, target in val_loader:
+            data, target = data.to(device), target.to(device)
+            output = model(data)
+            loss = criterion(output, target)
+            total_loss += loss.item() * data.size(0)
+            _, predicted = torch.max(output.data, 1)
+            total_samples += data.size(0)
+            total += target.size(0)
+            correct += (predicted == target).sum().item()
+    accuracy = correct / total
+    average_loss = total_loss / total_samples
+    return average_loss, accuracy

@@ -33,10 +33,10 @@ def get_args():
                         help="Types of federated learning algorithm and/or training procedure.")
 
     # training.
-    parser.add_argument('-lr', default=0.001, type=float,
+    parser.add_argument('-lr', default=0.005, type=float,
                         help='Learning rate')
     
-    parser.add_argument('-r', '--rounds', default=10, type=int,
+    parser.add_argument('-r', '--rounds', default=1000, type=int,
                         help='Number of rounds')
 
     parser.add_argument('-b', '--batch_size', default=32, type=int,
@@ -49,17 +49,20 @@ def get_args():
                         help='Number of runs')
 
     # Differential Privacy Minimax Client Fairness (DP-MCF) specific arguments
-    parser.add_argument('--epsilon', default=1.0, type=float,
+    parser.add_argument('--epsilon', default=10, type=float,
                         help='Privacy budget (epsilon) for DP-MCF')
     
-    parser.add_argument('--delta', default=1e-5, type=float,
+    parser.add_argument('--delta', default=1e-6, type=float,
                         help='Privacy parameter (delta) for DP-MCF')
     
-    parser.add_argument('--sensitivity', default=1.0, type=float,
+    parser.add_argument('--sensitivity', default=1, type=float,
                         help='Sensitivity bound (C) for DP-MCF')
     
-    parser.add_argument('--lr_mu', default=0.001, type=float,
+    parser.add_argument('--lr_mu', default=0.0005, type=float,
                         help='Learning rate for updating client weights (mu) in DP-MCF')
+
+    parser.add_argument('--minibatch_size', default=128, type=int,
+                        help='minibatch sample size in DPMCF')
     
     args = parser.parse_args()
 

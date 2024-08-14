@@ -74,10 +74,10 @@ def federated_training(args):
                 global_model = fedavg_aggregation(global_model, client_models)
             elif args.federated_type == 'afl':
                 global_model, client_weights = afl_aggregation(global_model, client_models, client_losses, client_weights)
+                print('Client weights: ', client_weights)
             else:
                 raise ValueError(f"Unsupported federated type: {args.federated_type}")
 
-            print('Client weights: ', client_weights)
             # Calculate client fairness (worst-off client loss)
             client_fairness = max(client_losses)
             client_fairness_values.append(client_fairness)
