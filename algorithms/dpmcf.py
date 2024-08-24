@@ -27,7 +27,7 @@ class DPMCF:
         """ Compute the upper bound U used for clipping in the DP mechanism. """
         C = self.args.sensitivity
         T = self.args.rounds
-        return C / 2 + 2 * self.sigma * np.log(T)
+        return C + 2 * C * self.sigma * np.log(T)
         # return C + 2 * C * np.log(T)/self.sigma
 
     def clip_gradient(self, gradient, C):
@@ -85,7 +85,7 @@ class DPMCF:
                 param.grad = agg_param.grad  # Set the gradient to the aggregated gradient
         optimizer.step()
 
-    def dpmcf(self, client_index, client_models, client_losses):
+    def dpmcf(self, client_index, client_losses):
         """ Perform the Differential Privacy Minimax Client Fairness Optimization. """
 
         # Update the selected client's weight using the exponential mechanism

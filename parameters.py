@@ -29,14 +29,18 @@ def get_args():
                             help='federated learning settings')
     
     parser.add_argument('--federated_type', default='fedavg', type=str,
-                        choices=['fedavg', 'afl', 'dpmcf'],
+                        choices=['fedavg', 'afl', 'dpsgd', 'dpmcf'],
                         help="Types of federated learning algorithm and/or training procedure.")
+    
+    parser.add_argument('--base_model', '-bm', default='mlp',
+                        choices=['cnn', 'mlp', 'rlr'],
+                        help='Base model')           
 
     # training.
-    parser.add_argument('-lr', default=0.005, type=float,
+    parser.add_argument('-lr', default=0.0005, type=float,
                         help='Learning rate')
     
-    parser.add_argument('-r', '--rounds', default=1000, type=int,
+    parser.add_argument('-r', '--rounds', default=200, type=int,
                         help='Number of rounds')
 
     parser.add_argument('-b', '--batch_size', default=32, type=int,
@@ -45,24 +49,37 @@ def get_args():
     parser.add_argument('--model_dir', default='./model/',
                         help='path to model')
     
-    parser.add_argument('--num_runs', default=1, type=int,
+    parser.add_argument('--num_runs', default=4, type=int,
                         help='Number of runs')
 
+    parser.add_argument('--sigma_max', default=4, type=float,
+                        help='sigma for differential privacy')
+
+    parser.add_argument('--patience', default=3, type=float, help='early stopping patience')
+
+    parser.add_argument('--min_delta', default=0.001, type=float, help='Minimum change to qualify as an improvement')
+
+    # DP-SGD
+    parser.add_argument('-C', '--clip_norm', default=1, type=float, help='Clipping norm for DP-SGD')
+
+    parser.add_argument('--mab_enabled', default=False, type=bool)
+    parser.add_argument('--exploration_factor', default=0.5, type=float)
+
     # Differential Privacy Minimax Client Fairness (DP-MCF) specific arguments
-    parser.add_argument('--epsilon', default=10, type=float,
-                        help='Privacy budget (epsilon) for DP-MCF')
+    # parser.add_argument('--epsilon', default=10, type=float,
+    #                     help='Privacy budget (epsilon) for DP-MCF')
     
-    parser.add_argument('--delta', default=1e-6, type=float,
-                        help='Privacy parameter (delta) for DP-MCF')
+    # parser.add_argument('--delta', default=1e-6, type=float,
+    #                     help='Privacy parameter (delta) for DP-MCF')
     
     parser.add_argument('--sensitivity', default=1, type=float,
                         help='Sensitivity bound (C) for DP-MCF')
     
-    parser.add_argument('--lr_mu', default=0.0005, type=float,
+    parser.add_argument('--lr_mu', default=0.0001, type=float,
                         help='Learning rate for updating client weights (mu) in DP-MCF')
 
-    parser.add_argument('--minibatch_size', default=128, type=int,
-                        help='minibatch sample size in DPMCF')
+    # parser.add_argument('--minibatch_size', default=128, type=int,
+    #                     help='minibatch sample size in DPMCF')
     
     args = parser.parse_args()
 
