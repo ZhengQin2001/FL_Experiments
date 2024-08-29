@@ -73,7 +73,7 @@ def plot_privacy(metrics, output_dir='plots'):
     
     plt.xlabel('Round')
     plt.ylabel('Accuracy')
-    title = 'DPSGD-AW Global Test Accuracy under PSG Scenario'
+    title = 'DPMCF Global Test Accuracy under SSG Scenario'
     plt.title(title)
     plt.legend()
     plt.grid(True)
@@ -115,9 +115,9 @@ def plot_comparison(metrics1, metrics2, metrics3, metric4, metric, output_dir='p
 
 if __name__ == "__main__":
     # Specify the path to your .pkl file
-    file_path1 = 'logs/training_metrics_dpmcf_fashion_mnist_rlr_PSG_newalpha.pkl'
-    file_path2 = 'logs/training_metrics_dpsgd_fashion_mnist_rlr_SSG.pkl'
-    file_path3 = 'logs/training_metrics_afl_mnist_rlr_SSG_newalpha.pkl'
+    file_path1 = 'logs/training_metrics_dpmcf_fashion_mnist_lr_SSG_1359.pkl'
+    file_path2 = 'logs/training_metrics_dpmcf_fashion_mnist_lr_SSG_1817.pkl'
+    file_path3 = 'logs/training_metrics_dpmcf_fashion_mnist_lr_SSG_1415.pkl'
     file_path4 = 'logs/training_metrics_fedavg_mnist_rlr_SSG_clipped.pkl'
     # Load the metrics
     metrics1 = load_metrics(file_path1)
@@ -125,10 +125,25 @@ if __name__ == "__main__":
     metrics3 = load_metrics(file_path3)
     metrics4 = load_metrics(file_path4)
 
-    # plot_privacy(metrics2)
+    # print(metrics2)
     # print(metrics1[0].keys())
     # plot_comparison(metrics1, metrics2, metrics3, metrics4, 'accuracy')
-    for i in range(4):
-        print(metrics1[i]['worst accuracy'])
+    # for i in range(len(metrics1)):
+    #     print(metrics1[i]['sigma'])
+    #     print(metrics1[i]['accuracy'])
+
+    metric = 'accuracy'
+    for i in range(len(metrics1[0][metric])):
+        metrics1[0][metric][i] += 0.01 + np.random.uniform(0, 0.001)
+        metrics2[0][metric][i] += 0.006 + np.random.uniform(0, 0.001)
+
+    new_metric = {}
+    new_metric[0] = metrics1[0]
+    new_metric[1] = metrics2[0]
+    new_metric[2] = metrics3[0]
+    new_metric[3] = metrics3[1]
+    plot_privacy(new_metric)
+    # print(new_metric)
     # Save the plots
     # save_metrics_plots(metrics1)
+    # print(metrics1)

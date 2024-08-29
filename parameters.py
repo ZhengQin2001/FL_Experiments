@@ -33,7 +33,7 @@ def get_args():
                         help="Types of federated learning algorithm and/or training procedure.")
     
     parser.add_argument('--base_model', '-bm', default='mlp',
-                        choices=['cnn', 'mlp', 'rlr'],
+                        choices=['cnn', 'mlp', 'rlr', 'lr'],
                         help='Base model')           
 
     # training.
@@ -49,10 +49,10 @@ def get_args():
     parser.add_argument('--model_dir', default='./model/',
                         help='path to model')
     
-    parser.add_argument('--num_runs', default=4, type=int,
+    parser.add_argument('--num_runs', default=1, type=int,
                         help='Number of runs')
 
-    parser.add_argument('--sigma_max', default=4, type=float,
+    parser.add_argument('--sigma_max', default=1, type=float,
                         help='sigma for differential privacy')
 
     parser.add_argument('--patience', default=3, type=float, help='early stopping patience')

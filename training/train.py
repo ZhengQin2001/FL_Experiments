@@ -7,6 +7,7 @@ import torch.optim as optim
 from models.cnn import CNN
 from models.mlp import MLP
 from models.robust_logistic_regression import RobustLogisticRegression
+from models.logistic_regression import LogisticRegression
 from utils.data_utils import load_client_data, load_test_data
 from utils.train_utils import train_client, evaluate_model
 from algorithms.fedavg import fedavg_aggregation
@@ -32,6 +33,8 @@ def federated_training(args):
         global_model = MLP(args.data, 2, 128, 0.3).to(device)
     elif args.base_model == 'rlr':
         global_model = RobustLogisticRegression(args.data).to(device)
+    elif args.base_model == 'lr':
+        global_model = LogisticRegression(args.data).to(device)
     criterion = torch.nn.CrossEntropyLoss()
     sigma_values = np.linspace(start=1, stop=args.sigma_max, num=args.num_runs)  # Sigma changes per run
     
@@ -117,13 +120,13 @@ def federated_training(args):
                 break
 
             # Save metrics after each round
-            save_metrics(run_metrics, os.path.join('logs', f'training_metrics_{args.federated_type}_{args.data}_{args.base_model}_{args.data_setting}_1545.pkl'))
+            save_metrics(run_metrics, os.path.join('logs', f'training_metrics_{args.federated_type}_{args.data}_{args.base_model}_{args.data_setting}_1102.pkl'))
 
         model_base_dir = os.path.join(args.model_dir, args.data, args.data_setting)
         os.makedirs(model_base_dir, exist_ok=True)
         torch.save(global_model.state_dict(), os.path.join(model_base_dir, f'global_model_{run}.pt'))
 
         # Save metrics after each run
-        save_metrics(run_metrics, os.path.join('logs', f'training_metrics_{args.federated_type}_{args.data}_{args.base_model}_{args.data_setting}_1545.pkl'))
+        save_metrics(run_metrics, os.path.join('logs', f'training_metrics_{args.federated_type}_{args.data}_{args.base_model}_{args.data_setting}_1102.pkl'))
 
     print("Federated training completed. Metrics saved for analysis.")
